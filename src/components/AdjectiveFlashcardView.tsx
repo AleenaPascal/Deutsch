@@ -120,12 +120,29 @@ export function AdjectiveFlashcardView({
         {/* Pure Card without header or footer */}
         <div
           onClick={() => setIsFlipped(!isFlipped)}
-          className={`w-full max-w-4xl min-h-[70vh] rounded-3xl transition-all duration-300 shadow-2xl border-2 p-8 sm:p-14 flex flex-col justify-center cursor-pointer select-none ${
-            isFlipped
+          className={`w-full max-w-4xl min-h-[70vh] rounded-3xl transition-all duration-300 shadow-2xl border-2 p-8 sm:p-14 flex flex-col justify-center cursor-pointer select-none relative ${
+            isBookmarked
+              ? 'border-amber-400/75 ring-1 ring-amber-400/35 bg-gradient-to-br from-amber-950/25 via-slate-900 to-slate-950'
+              : isFlipped
               ? 'bg-gradient-to-br from-slate-900 via-rose-950/20 to-slate-900 border-rose-500/40'
               : 'bg-gradient-to-br from-slate-900 via-cyan-950/20 to-slate-900 border-cyan-500/40'
           }`}
         >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleBookmark(currentItem.id);
+            }}
+            className={`absolute top-5 right-5 p-2.5 rounded-xl border transition-colors cursor-pointer ${
+              isBookmarked
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border-slate-700/70'
+            }`}
+            title={isBookmarked ? 'Remove star' : 'Star pair'}
+          >
+            <Star className={`w-5 h-5 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
+          </button>
           {!isFlipped ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
               <div className="bg-slate-950/75 border border-cyan-500/30 rounded-2xl p-6 sm:p-8 text-center">
@@ -273,20 +290,39 @@ export function AdjectiveFlashcardView({
       >
         <div
           className={`relative h-full w-full rounded-3xl transition-transform duration-500 shadow-2xl border ${
-            isFlipped
+            isBookmarked
+              ? 'border-amber-400/75 ring-1 ring-amber-400/35 bg-gradient-to-br from-amber-950/20 via-slate-900 to-slate-950'
+              : isFlipped
               ? 'bg-gradient-to-br from-slate-900 via-rose-950/20 to-slate-900 border-rose-500/30'
               : 'bg-gradient-to-br from-slate-900 via-cyan-950/20 to-slate-900 border-cyan-500/30'
           } p-8 flex flex-col justify-between`}
         >
           {/* Card Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <span className="text-xs uppercase tracking-widest font-semibold text-slate-400 flex items-center gap-1.5">
               <ArrowLeftRight className="w-3.5 h-3.5 text-cyan-400" />
               {isFlipped ? 'Example Context Sentence' : 'Opposite Pair • Gegenteile'}
             </span>
-            <span className="text-xs text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700">
-              Space / Click to Flip
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-full border border-slate-700">
+                Space / Click to Flip
+              </span>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleBookmark(currentItem.id);
+                }}
+                className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                  isBookmarked
+                    ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                    : 'bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-amber-300 border-slate-700/60'
+                }`}
+                title={isBookmarked ? 'Remove star' : 'Star pair'}
+              >
+                <Star className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
+              </button>
+            </div>
           </div>
 
           {/* Card Body */}

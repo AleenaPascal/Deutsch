@@ -127,8 +127,27 @@ export const FlashcardView: React.FC<Props> = ({
         {/* Pure Card without header or footer */}
         <div
           onClick={() => setIsFlipped(!isFlipped)}
-          className="w-full max-w-4xl min-h-[70vh] bg-gradient-to-br from-slate-900 to-slate-950 border-2 border-slate-700/80 hover:border-amber-500/50 rounded-3xl p-8 sm:p-14 shadow-2xl relative cursor-pointer select-none transition-all duration-300 flex flex-col justify-center"
+          className={`w-full max-w-4xl min-h-[70vh] bg-gradient-to-br from-slate-900 to-slate-950 border-2 rounded-3xl p-8 sm:p-14 shadow-2xl relative cursor-pointer select-none transition-all duration-300 flex flex-col justify-center ${
+            isBookmarked
+              ? 'border-amber-400/70 ring-1 ring-amber-400/30'
+              : 'border-slate-700/80 hover:border-amber-500/50'
+          }`}
         >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleBookmark(currentItem.id);
+            }}
+            className={`absolute top-5 right-5 p-2.5 rounded-xl border transition-colors cursor-pointer ${
+              isBookmarked
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border-slate-700/70'
+            }`}
+            title={isBookmarked ? 'Remove star' : 'Star verb'}
+          >
+            <Star className={`w-5 h-5 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
+          </button>
           {!isFlipped ? (
             <div className="text-center space-y-6">
               <div className="flex items-center justify-center gap-4">
@@ -255,7 +274,11 @@ export const FlashcardView: React.FC<Props> = ({
       {/* Flip Card Container */}
       <div
         onClick={() => setIsFlipped(!isFlipped)}
-        className="w-full min-h-[380px] sm:min-h-[420px] bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-700/80 hover:border-amber-500/50 rounded-3xl p-8 sm:p-10 shadow-2xl relative cursor-pointer select-none transition-all duration-300 flex flex-col justify-between group"
+        className={`w-full min-h-[380px] sm:min-h-[420px] bg-gradient-to-br from-slate-900 to-slate-950 border rounded-3xl p-8 sm:p-10 shadow-2xl relative cursor-pointer select-none transition-all duration-300 flex flex-col justify-between group ${
+          isBookmarked
+            ? 'border-amber-400/70 ring-1 ring-amber-400/30'
+            : 'border-slate-700/80 hover:border-amber-500/50'
+        }`}
       >
         {/* Card Header */}
         <div className="flex items-center justify-between">

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Volume2, Star, Mic, Sparkles, Check, Download } from 'lucide-react';
+import { Volume2, Star, Mic } from 'lucide-react';
 import { VocabItem } from '../data/vocabulary';
 import { AudioOptions, playSnippet } from '../services/audioService';
 
@@ -41,13 +41,15 @@ export const TableView: React.FC<Props> = ({
           <thead className="bg-slate-800/80 text-xs font-semibold uppercase tracking-wider text-slate-400 select-none">
             <tr>
               <th scope="col" className="py-3.5 px-3 w-14 text-center">#</th>
-              <th scope="col" className="py-3.5 px-3 w-12 text-center">Audio</th>
+              <th scope="col" className="py-3.5 px-2 w-10 text-center" title="Starred">
+                <Star className="w-3.5 h-3.5 mx-auto text-slate-500" />
+              </th>
               <th scope="col" className="py-3.5 px-4 min-w-[160px]">Verb / Phrase</th>
               <th scope="col" className="py-3.5 px-4 min-w-[150px]">English Meaning</th>
               <th scope="col" className="py-3.5 px-4 min-w-[130px]">Perfekt Form</th>
               <th scope="col" className="py-3.5 px-4 min-w-[240px]">German Example Sentence</th>
               <th scope="col" className="py-3.5 px-4 min-w-[220px]">English Sentence</th>
-              <th scope="col" className="py-3.5 px-3 w-20 text-center">Actions</th>
+              <th scope="col" className="py-3.5 px-3 w-16 text-center">Practice</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-sans">
@@ -62,27 +64,31 @@ export const TableView: React.FC<Props> = ({
                   onClick={() => onPlayItem(item)}
                   className={`group cursor-pointer transition-colors duration-150 ${
                     isActive
-                      ? 'bg-amber-500/15 border-l-4 border-l-amber-400'
+                      ? 'bg-amber-500/20 border-l-4 border-l-amber-400'
+                      : isBookmarked
+                      ? 'bg-amber-500/10 hover:bg-amber-500/15 border-l-4 border-l-amber-400/80'
                       : 'hover:bg-slate-800/40'
                   }`}
                 >
                   {/* Number */}
-                  <td className="py-3.5 px-3 text-center font-mono font-bold text-xs text-slate-400 group-hover:text-amber-400">
+                  <td className={`py-3.5 px-3 text-center font-mono font-bold text-xs group-hover:text-amber-400 ${
+                    isBookmarked ? 'text-amber-300' : 'text-slate-400'
+                  }`}>
                     {item.id}
                   </td>
 
-                  {/* Play audio button */}
-                  <td className="py-3.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                  {/* Star column between numbering and word */}
+                  <td className="py-3.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                     <button
-                      onClick={() => onPlayItem(item)}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                        isActive && isPlaying
-                          ? 'bg-amber-400 text-slate-950 ring-2 ring-amber-400/50 shadow-md animate-pulse'
-                          : 'bg-slate-800 text-slate-300 hover:bg-amber-500 hover:text-slate-950'
+                      onClick={() => onToggleBookmark(item.id)}
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        isBookmarked
+                          ? 'text-amber-400 bg-amber-400/15'
+                          : 'text-slate-500 hover:text-amber-300 hover:bg-slate-800'
                       }`}
-                      title="Play this item"
+                      title={isBookmarked ? 'Remove star' : 'Star verb'}
                     >
-                      <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+                      <Star className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
                     </button>
                   </td>
 
@@ -172,23 +178,12 @@ export const TableView: React.FC<Props> = ({
                     {item.englishSentence}
                   </td>
 
-                  {/* Action buttons (Bookmark & Mic) */}
+                  {/* Practice button (Mic) */}
                   <td className="py-3.5 px-3 text-center" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-center gap-1">
-                      <button
-                        onClick={() => onToggleBookmark(item.id)}
-                        className={`p-1.5 rounded-lg transition-colors ${
-                          isBookmarked
-                            ? 'text-amber-400 bg-amber-400/10'
-                            : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
-                        }`}
-                        title={isBookmarked ? 'Remove bookmark' : 'Bookmark verb'}
-                      >
-                        <Star className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
-                      </button>
+                    <div className="flex items-center justify-center">
                       <button
                         onClick={() => onOpenRecord(item)}
-                        className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors"
+                        className="p-1.5 text-slate-500 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
                         title="Practice speaking with microphone"
                       >
                         <Mic className="w-4 h-4" />

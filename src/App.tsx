@@ -23,6 +23,8 @@ import {
   Bookmark,
   Award,
   ArrowLeftRight,
+  SpellCheck,
+  MessageCircle,
 } from 'lucide-react';
 import { VOCABULARY_LIST, VocabItem, CATEGORIES } from './data/vocabulary';
 import { A1_VERBS_LIST, A1VerbItem, A1_CATEGORIES } from './data/a1Verbs';
@@ -59,6 +61,8 @@ import { OriginalImageModal } from './components/OriginalImageModal';
 import { RecorderModal } from './components/RecorderModal';
 import { AudioCompilerModal } from './components/AudioCompilerModal';
 import { MasterReferenceView } from './components/MasterReferenceView';
+import { SentenceCorrectorView } from './components/SentenceCorrectorView';
+import { GermanAIChatDrawer } from './components/GermanAIChatDrawer';
 
 type ContentSection =
   | 'a1-verbs'
@@ -69,7 +73,8 @@ type ContentSection =
   | 'nouns'
   | 'adjectives'
   | 'degree-amount'
-  | 'master-ref';
+  | 'master-ref'
+  | 'sentence-checker';
 type ActiveTab = 'table' | 'flashcards' | 'quiz';
 
 export default function App() {
@@ -82,6 +87,7 @@ export default function App() {
   const [overrideSheetIndex, setOverrideSheetIndex] = useState<number | null>(null);
   const [showAudioCompiler, setShowAudioCompiler] = useState(false);
   const [recordingItem, setRecordingItem] = useState<VocabItem | NounItem | null>(null);
+  const [showAIChat, setShowAIChat] = useState(false);
 
   // -------------------------
   // A1 VERBS STATE (278)
@@ -946,6 +952,9 @@ export default function App() {
   // Keyboard navigation shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (contentSection === 'sentence-checker' || contentSection === 'master-ref') {
+        return;
+      }
       if (['input', 'textarea'].includes((e.target as HTMLElement).tagName.toLowerCase())) {
         return;
       }
@@ -962,7 +971,7 @@ export default function App() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, isPlaying, activeItems]);
+  }, [currentIndex, isPlaying, activeItems, contentSection]);
 
   // Handle section switch cleanly
   const switchSection = (section: ContentSection) => {
@@ -1116,11 +1125,38 @@ export default function App() {
                   14 Sheets
                 </span>
               </button>
+
+              <button
+                onClick={() => switchSection('sentence-checker')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  contentSection === 'sentence-checker'
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 shadow-md shadow-emerald-500/25 font-black'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <SpellCheck className="w-3.5 h-3.5" />
+                <span>Sentence Checker</span>
+              </button>
             </div>
           </div>
 
           {/* Action buttons */}
           <div className="flex items-center gap-2 flex-wrap">
+            {/* AI Chat Button */}
+            <button
+              type="button"
+              onClick={() => setShowAIChat((prev) => !prev)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 cursor-pointer ${
+                showAIChat
+                  ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-md shadow-emerald-500/25'
+                  : 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border-emerald-500/35'
+              }`}
+              title="Open German AI Chat & Sentence Checker"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>AI Chat</span>
+            </button>
+
             {/* Download ALL Audio Button */}
             <button
               onClick={() => setShowAudioCompiler(true)}
@@ -1142,6 +1178,7 @@ export default function App() {
             </button>
 
             {/* View Mode Tabs */}
+            {contentSection !== 'sentence-checker' && (
             <div className="flex items-center bg-slate-800/80 p-1 rounded-xl border border-slate-700">
               <button
                 onClick={() => setActiveTab('table')}
@@ -1191,6 +1228,7 @@ export default function App() {
                 )}
               </button>
             </div>
+            )}
           </div>
         </div>
       </header>
@@ -2699,7 +2737,7 @@ export default function App() {
 
 
 
-        {/* Master Reference Decks (Chapters 1–11) */}
+        {/* Master Reference Decks (Chapters 1–13) */}
         {contentSection === 'master-ref' && (
           <MasterReferenceView
             onPlaySnippet={(txt) => playSnippet(txt, 'de', audioOptions)}
@@ -2709,10 +2747,17 @@ export default function App() {
             }}
           />
         )}
+
+        {/* German Sentence Checker & Alternatives */}
+        {contentSection === 'sentence-checker' && (
+          <SentenceCorrectorView
+            onPlaySnippet={(txt) => playSnippet(txt, 'de', audioOptions)}
+          />
+        )}
       </main>
 
       {/* Floating Sticky Audio Player Controller Bar */}
-      {contentSection !== 'master-ref' && (
+      {contentSection !== 'master-ref' && contentSection !== 'sentence-checker' && (
         <AudioPlayerBar
           currentItem={currentItem}
           currentIndex={currentIndex}
@@ -2744,7 +2789,7 @@ export default function App() {
       <AudioCompilerModal
         isOpen={showAudioCompiler}
         onClose={() => setShowAudioCompiler(false)}
-        section={contentSection}
+        section={contentSection === 'sentence-checker' ? 'a1-verbs' : contentSection}
         filteredItems={activeItems}
         bookmarkedIds={
           contentSection === 'a1-verbs'
@@ -2784,6 +2829,14 @@ export default function App() {
           onClose={() => setRecordingItem(null)}
         />
       )}
+
+      {/* Floating German AI Chat Icon & Drawer */}
+      <GermanAIChatDrawer
+        isOpen={showAIChat}
+        hasBottomPlayerBar={contentSection !== 'master-ref' && contentSection !== 'sentence-checker'}
+        onToggleOpen={() => setShowAIChat((prev) => !prev)}
+        onOpenFullChecker={() => switchSection('sentence-checker')}
+      />
     </div>
   );
 }

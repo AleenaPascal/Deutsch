@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Volume2,
-  Bookmark,
+  Star,
   Sparkles,
   ArrowRight,
   RotateCw,
@@ -199,7 +199,10 @@ export function MasterExpressionsCardView({
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {items.map((item) => {
                 const isCurrentlyPlaying = currentPlayingId === item.id && isPlaying;
-                const cardAccentClass = item.badgeVariant
+                const isBookmarked = bookmarkedIds.has(item.id);
+                const cardAccentClass = isBookmarked
+                  ? 'border-amber-400/70 bg-amber-950/20 ring-1 ring-amber-400/30'
+                  : item.badgeVariant
                   ? item.badgeVariant === 'emerald'
                     ? 'border-emerald-500/40 hover:border-emerald-500/70 bg-gradient-to-b from-emerald-950/20 to-slate-900/90'
                     : item.badgeVariant === 'amber'
@@ -235,13 +238,27 @@ export function MasterExpressionsCardView({
                             {item.english}
                           </div>
                         </div>
-                        <button
-                          onClick={() => onPlaySnippet(item.mainText)}
-                          className="p-2 rounded-xl bg-slate-800 hover:bg-cyan-600 text-cyan-400 hover:text-white transition-all cursor-pointer shrink-0"
-                          title="Listen"
-                        >
-                          <Volume2 className="w-4 h-4" />
-                        </button>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => onToggleBookmark(item.id)}
+                            className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                              isBookmarked
+                                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                                : 'bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-amber-300 border-slate-700/60'
+                            }`}
+                            title={isBookmarked ? 'Remove star' : 'Star card'}
+                          >
+                            <Star className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
+                          </button>
+                          <button
+                            onClick={() => onPlaySnippet(item.mainText)}
+                            className="p-2 rounded-xl bg-slate-800 hover:bg-cyan-600 text-cyan-400 hover:text-white transition-all cursor-pointer shrink-0"
+                            title="Listen"
+                          >
+                            <Volume2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
 
                       {item.contrastText && (
@@ -315,12 +332,33 @@ export function MasterExpressionsCardView({
               {/* Pure Card Surface without header or footer */}
               <div
                 onClick={() => setIsFlipped((prev) => !prev)}
-                className={`w-full max-w-4xl min-h-[70vh] rounded-3xl border-2 p-8 sm:p-14 shadow-2xl flex flex-col justify-center cursor-pointer select-none transition-all duration-300 ${
-                  isFlipped
+                className={`w-full max-w-4xl min-h-[70vh] rounded-3xl border-2 p-8 sm:p-14 shadow-2xl flex flex-col justify-center cursor-pointer select-none transition-all duration-300 relative ${
+                  bookmarkedIds.has(currentFlashcard.id)
+                    ? 'border-amber-400/70 ring-1 ring-amber-400/30 bg-gradient-to-b from-amber-950/20 to-slate-950'
+                    : isFlipped
                     ? 'border-cyan-500/60 bg-gradient-to-b from-cyan-950/20 to-slate-900'
                     : 'border-slate-700 bg-gradient-to-b from-slate-900 to-slate-950'
                 }`}
               >
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleBookmark(currentFlashcard.id);
+                  }}
+                  className={`absolute top-5 right-5 p-2.5 rounded-xl border transition-colors cursor-pointer ${
+                    bookmarkedIds.has(currentFlashcard.id)
+                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                      : 'bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border-slate-700/70'
+                  }`}
+                  title={bookmarkedIds.has(currentFlashcard.id) ? 'Remove star' : 'Star this card'}
+                >
+                  <Star
+                    className={`w-5 h-5 ${
+                      bookmarkedIds.has(currentFlashcard.id) ? 'fill-amber-400 text-amber-400' : ''
+                    }`}
+                  />
+                </button>
                 <div className="text-center">
                   {!isFlipped ? (
                     currentFlashcard.contrastText ? (
@@ -524,8 +562,10 @@ export function MasterExpressionsCardView({
             const isCurrentlyPlaying = currentPlayingId === item.id && isPlaying;
             const isBookmarked = bookmarkedIds.has(item.id);
 
-            // Card highlight colors based on item.badgeVariant or theme
-            const cardAccentClass = item.badgeVariant
+            // Card highlight colors based on starred state, item.badgeVariant or theme
+            const cardAccentClass = isBookmarked
+              ? 'border-amber-400/70 bg-amber-950/20 ring-1 ring-amber-400/30'
+              : item.badgeVariant
               ? item.badgeVariant === 'emerald'
                 ? 'border-emerald-500/40 hover:border-emerald-500/70 bg-gradient-to-b from-emerald-950/20 to-slate-900/90'
                 : item.badgeVariant === 'amber'
@@ -546,7 +586,7 @@ export function MasterExpressionsCardView({
                 key={item.id}
                 className={`border rounded-2xl p-5 shadow-lg flex flex-col justify-between transition-all duration-200 relative group ${cardAccentClass}`}
               >
-                {/* Card Top Metadata & Bookmark */}
+                {/* Card Top Metadata & Star */}
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -567,10 +607,14 @@ export function MasterExpressionsCardView({
 
                     <button
                       onClick={() => onToggleBookmark(item.id)}
-                      className="p-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer border border-slate-800"
-                      title={isBookmarked ? 'Remove bookmark' : 'Bookmark item'}
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer border ${
+                        isBookmarked
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                          : 'bg-slate-950/80 hover:bg-slate-800 text-slate-400 hover:text-amber-400 border-slate-800'
+                      }`}
+                      title={isBookmarked ? 'Remove star' : 'Star item'}
                     >
-                      <Bookmark
+                      <Star
                         className={`w-4 h-4 ${
                           isBookmarked ? 'fill-amber-400 text-amber-400' : ''
                         }`}
@@ -710,7 +754,9 @@ export function MasterExpressionsCardView({
           <div
             onClick={() => setIsFlipped((prev) => !prev)}
             className={`min-h-[380px] bg-slate-900 border-2 rounded-3xl p-7 shadow-2xl flex flex-col justify-between transition-all duration-300 cursor-pointer relative overflow-hidden select-none hover:border-slate-600 ${
-              isFlipped
+              bookmarkedIds.has(currentFlashcard.id)
+                ? 'border-amber-400/70 ring-1 ring-amber-400/30 bg-gradient-to-b from-amber-950/20 to-slate-950'
+                : isFlipped
                 ? 'border-cyan-500/60 bg-gradient-to-b from-cyan-950/20 to-slate-900'
                 : 'border-slate-700 bg-gradient-to-b from-slate-900 to-slate-950'
             }`}
@@ -740,10 +786,14 @@ export function MasterExpressionsCardView({
                     e.stopPropagation();
                     onToggleBookmark(currentFlashcard.id);
                   }}
-                  className="p-2 rounded-xl bg-slate-950/80 hover:bg-slate-800 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer border border-slate-800"
-                  title="Bookmark flashcard"
+                  className={`p-2 rounded-xl transition-colors cursor-pointer border ${
+                    bookmarkedIds.has(currentFlashcard.id)
+                      ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                      : 'bg-slate-950/80 hover:bg-slate-800 text-slate-400 hover:text-amber-400 border-slate-800'
+                  }`}
+                  title={bookmarkedIds.has(currentFlashcard.id) ? 'Remove star' : 'Star flashcard'}
                 >
-                  <Bookmark
+                  <Star
                     className={`w-4 h-4 ${
                       bookmarkedIds.has(currentFlashcard.id) ? 'fill-amber-400 text-amber-400' : ''
                     }`}

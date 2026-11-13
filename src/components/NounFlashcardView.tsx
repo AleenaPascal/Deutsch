@@ -115,14 +115,31 @@ export function NounFlashcardView({
         {/* Pure Card without header or footer */}
         <div
           onClick={() => setIsFlipped(!isFlipped)}
-          className={`w-full max-w-4xl min-h-[70vh] rounded-3xl border-2 p-8 sm:p-14 flex flex-col justify-center cursor-pointer select-none transition-all duration-300 shadow-2xl ${
-            currentItem.gender === 'feminine'
+          className={`w-full max-w-4xl min-h-[70vh] rounded-3xl border-2 p-8 sm:p-14 flex flex-col justify-center cursor-pointer select-none transition-all duration-300 shadow-2xl relative ${
+            isBookmarked
+              ? 'ring-2 ring-amber-400/50 border-amber-400/80 bg-gradient-to-br from-amber-950/30 via-slate-900 to-slate-950'
+              : currentItem.gender === 'feminine'
               ? 'bg-gradient-to-br from-pink-950/40 via-slate-900 to-slate-950 border-pink-500/40 shadow-pink-500/10'
               : currentItem.gender === 'masculine'
                 ? 'bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-950 border-blue-500/40 shadow-blue-500/10'
                 : 'bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-950 border-emerald-500/40 shadow-emerald-500/10'
           }`}
         >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleBookmark(currentItem.id);
+            }}
+            className={`absolute top-5 right-5 p-2.5 rounded-xl border transition-colors cursor-pointer ${
+              isBookmarked
+                ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                : 'bg-slate-900/80 hover:bg-slate-800 text-slate-400 hover:text-amber-300 border-slate-700/70'
+            }`}
+            title={isBookmarked ? 'Remove star' : 'Star noun'}
+          >
+            <Star className={`w-5 h-5 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
+          </button>
           {!isFlipped ? (
             <div className="space-y-6 text-center">
               <div
@@ -251,7 +268,9 @@ export function NounFlashcardView({
       <div
         onClick={() => setIsFlipped(!isFlipped)}
         className={`relative min-h-[380px] rounded-3xl border-2 p-8 flex flex-col justify-between cursor-pointer transition-all duration-300 shadow-2xl backdrop-blur-xl ${
-          currentItem.gender === 'feminine'
+          isBookmarked
+            ? 'ring-2 ring-amber-400/50 border-amber-400/80 bg-gradient-to-br from-amber-950/25 via-slate-900 to-slate-950'
+            : currentItem.gender === 'feminine'
             ? 'bg-gradient-to-br from-pink-950/40 via-slate-900 to-slate-950 border-pink-500/40 shadow-pink-500/10'
             : currentItem.gender === 'masculine'
               ? 'bg-gradient-to-br from-blue-950/40 via-slate-900 to-slate-950 border-blue-500/40 shadow-blue-500/10'
@@ -259,14 +278,31 @@ export function NounFlashcardView({
         }`}
       >
         {/* Top Header inside card */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <span className="text-xs font-mono text-slate-400">
             #{currentItem.id} • {currentItem.category || 'German B1 Noun'}
           </span>
-          <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
-            <RotateCw className="w-3.5 h-3.5 text-slate-400" />
-            {isFlipped ? 'Showing Back (Click to flip)' : 'Showing Front (Click to flip)'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-400 flex items-center gap-1 font-mono">
+              <RotateCw className="w-3.5 h-3.5 text-slate-400" />
+              {isFlipped ? 'Showing Back (Click to flip)' : 'Showing Front (Click to flip)'}
+            </span>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onToggleBookmark(currentItem.id);
+              }}
+              className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                isBookmarked
+                  ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                  : 'bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-amber-300 border-slate-700/60'
+              }`}
+              title={isBookmarked ? 'Remove star' : 'Star noun'}
+            >
+              <Star className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
+            </button>
+          </div>
         </div>
 
         {/* Card Body */}

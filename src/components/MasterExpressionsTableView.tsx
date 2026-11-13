@@ -132,6 +132,9 @@ export function MasterExpressionsTableView({
           <thead>
             <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400 text-xs font-semibold uppercase tracking-wider">
               <th className="py-3 px-4 w-12 text-center">#</th>
+              <th className="py-3 px-2 w-10 text-center" title="Starred">
+                <Star className="w-3.5 h-3.5 mx-auto text-slate-500" />
+              </th>
               <th className="py-3 px-4 min-w-[200px]">German Expression</th>
               {items.some((i) => i.contrastText) && (
                 <th className="py-3 px-4 min-w-[180px]">Contrast / Nuance</th>
@@ -179,32 +182,38 @@ export function MasterExpressionsTableView({
               return (
                 <tr
                   key={item.id}
-                  className={`group transition-colors duration-150 border-l-4 ${rowBorder} ${
+                  className={`group transition-colors duration-150 border-l-4 ${
                     isCurrentlyPlaying
-                      ? 'bg-amber-500/15'
-                      : 'hover:bg-slate-800/50'
+                      ? 'border-l-amber-400 bg-amber-500/20'
+                      : isBookmarked
+                      ? 'border-l-amber-400 bg-amber-500/15 hover:bg-amber-500/20 ring-1 ring-inset ring-amber-400/30'
+                      : `${rowBorder} hover:bg-slate-800/50`
                   }`}
                 >
-                  {/* ID & Bookmark */}
-                  <td className="py-3 px-4 text-center">
-                    <div className="flex flex-col items-center gap-1">
-                      <span className="font-mono text-xs text-slate-500">
-                        {item.id}
-                      </span>
-                      <button
-                        onClick={() => onToggleBookmark(item.id)}
-                        className="text-slate-600 hover:text-amber-400 transition-colors cursor-pointer"
-                        title={isBookmarked ? 'Remove bookmark' : 'Bookmark'}
-                      >
-                        <Star
-                          className={`w-3.5 h-3.5 ${
-                            isBookmarked
-                              ? 'fill-amber-400 text-amber-400'
-                              : 'opacity-40 hover:opacity-100'
-                          }`}
-                        />
-                      </button>
-                    </div>
+                  {/* ID */}
+                  <td className={`py-3 px-4 text-center font-mono text-xs ${
+                    isBookmarked ? 'text-amber-300 font-bold' : 'text-slate-500'
+                  }`}>
+                    {item.id}
+                  </td>
+
+                  {/* Star between numbering and German expression */}
+                  <td className="py-3 px-2 text-center">
+                    <button
+                      onClick={() => onToggleBookmark(item.id)}
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        isBookmarked
+                          ? 'text-amber-400 bg-amber-400/15'
+                          : 'text-slate-500 hover:text-amber-300 hover:bg-slate-800'
+                      }`}
+                      title={isBookmarked ? 'Remove star' : 'Star expression'}
+                    >
+                      <Star
+                        className={`w-4 h-4 ${
+                          isBookmarked ? 'fill-amber-400 text-amber-400' : ''
+                        }`}
+                      />
+                    </button>
                   </td>
 
                   {/* German expression */}

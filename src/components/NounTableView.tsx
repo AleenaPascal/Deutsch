@@ -69,11 +69,14 @@ export function NounTableView({
           <thead>
             <tr className="bg-slate-950/80 text-slate-400 text-xs uppercase tracking-wider border-b border-slate-800">
               <th className="py-3.5 px-4 w-12 text-center font-mono">#</th>
+              <th className="py-3.5 px-2 w-10 text-center" title="Starred">
+                <Star className="w-3.5 h-3.5 mx-auto text-slate-500" />
+              </th>
               <th className="py-3.5 px-4 min-w-[200px]">Noun & Article</th>
               <th className="py-3.5 px-4 min-w-[170px]">English Meaning</th>
               <th className="py-3.5 px-4 min-w-[160px]">Plural Form</th>
               <th className="py-3.5 px-4 min-w-[340px]">Example Sentence (Beispielsatz)</th>
-              <th className="py-3.5 px-4 w-36 text-center">Practice & Audio</th>
+              <th className="py-3.5 px-4 w-32 text-center">Practice & Audio</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60 font-sans">
@@ -95,13 +98,33 @@ export function NounTableView({
                   key={item.id}
                   className={`group transition-colors duration-150 ${borderLeftClass} ${
                     isCurrentlyPlaying
-                      ? 'bg-amber-500/10'
+                      ? 'bg-amber-500/20'
+                      : isBookmarked
+                      ? 'bg-amber-500/10 hover:bg-amber-500/15 ring-1 ring-inset ring-amber-400/25'
                       : 'hover:bg-slate-800/50'
                   }`}
                 >
                   {/* ID */}
-                  <td className="py-3.5 px-4 text-center font-mono text-xs text-slate-500 group-hover:text-slate-400">
+                  <td className={`py-3.5 px-4 text-center font-mono text-xs group-hover:text-slate-300 ${
+                    isBookmarked ? 'text-amber-300 font-bold' : 'text-slate-500'
+                  }`}>
                     {item.id}
+                  </td>
+
+                  {/* Star between numbering and noun */}
+                  <td className="py-3.5 px-2 text-center">
+                    <button
+                      onClick={() => onToggleBookmark(item.id)}
+                      className={`p-1.5 rounded-lg border transition-colors cursor-pointer ${
+                        isBookmarked
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                          : 'bg-slate-800/60 hover:bg-slate-700 text-slate-500 hover:text-amber-300 border-slate-700/50'
+                      }`}
+                      title={isBookmarked ? 'Remove star' : 'Star this Noun'}
+                      aria-label="Star"
+                    >
+                      <Star className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
+                    </button>
                   </td>
 
                   {/* Noun & Gender Badge */}
@@ -202,20 +225,6 @@ export function NounTableView({
                         aria-label="Download audio"
                       >
                         <Download className="w-4 h-4" />
-                      </button>
-
-                      {/* Bookmark Star */}
-                      <button
-                        onClick={() => onToggleBookmark(item.id)}
-                        className={`p-2 rounded-lg border transition-colors cursor-pointer ${
-                          isBookmarked
-                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                            : 'bg-slate-800/80 hover:bg-slate-700 text-slate-500 hover:text-slate-300 border-slate-700/50'
-                        }`}
-                        title={isBookmarked ? 'Remove Bookmark' : 'Bookmark this Noun'}
-                        aria-label="Bookmark"
-                      >
-                        <Star className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
                       </button>
                     </div>
                   </td>

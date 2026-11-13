@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import http from 'http';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type, ThinkingLevel } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -387,6 +387,272 @@ app.post('/api/export-single-track', async (req: Request, res: Response): Promis
   }
 });
 
+// German sentence grammar checker, mistake explainer, and alternatives generator
+app.post('/api/check-german-sentence', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { sentence, targetLevel = 'natural' } = req.body;
+
+    if (!sentence || typeof sentence !== 'string' || !sentence.trim()) {
+      res.status(400).json({ error: 'INVALID_INPUT', message: 'Please enter a German sentence to check.' });
+      return;
+    }
+
+    const trimmed = sentence.trim();
+    if (trimmed.length > 2000) {
+      res.status(400).json({ error: 'INPUT_TOO_LONG', message: 'Please keep your text under 2000 characters.' });
+      return;
+    }
+
+    const ai = getGeminiClient();
+    if (!ai) {
+      res.status(503).json({
+        error: 'GEMINI_KEY_MISSING',
+        message: 'Gemini API key is not configured on the server. Please check Settings > Secrets.',
+      });
+      return;
+    }
+
+    const levelInstruction =
+      targetLevel === 'a1-a2'
+        ? 'Focus alternatives on clear, everyday A1-A2 beginner/elementary phrasing.'
+        : targetLevel === 'b1-b2'
+        ? 'Focus alternatives on polished B1-B2 intermediate/exam-ready German including natural connectors.'
+        : 'Provide a practical mix of everyday spoken, polite/formal, and natural B1-B2 alternatives.';
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-4-hydrogen',
+      contents: `Analyze and correct the following German text written by a learner:\n\n"${trimmed}"\n\n${levelInstruction}`,
+      config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        systemInstruction:
+          'You are an expert, encouraging German language teacher (DaF A1–B2). Analyze the user\'s German sentence(s). ' +
+          'Identify whether the input is already completely correct (`isCorrect`). ' +
+          'Provide the natural, grammatically accurate `correctedSentence` preserving the user\'s intended meaning. ' +
+          'For every grammar, word order, case, article/gender, auxiliary verb (haben/sein), preposition, spelling, or punctuation issue, add an entry in `mistakes` explaining clearly where it went wrong and why. If `isCorrect` is true, `mistakes` should be an empty array. ' +
+          'Always provide 3 to 4 genuinely useful alternative correct ways to write the same idea in `alternatives` (spanning Everyday Spoken, Polite/Formal, Natural B1–B2 Upgrade, or Short & Direct). ' +
+          'Always include `nextPracticeChallenge`: assess the CEFR level of the user\'s German sentence (A1, A2, B1, or B2) as `detectedLevel`, and keep `nextLevel` at that **EXACT SAME German CEFR level** (do NOT make the German grammar harder!). Instead, write `englishPrompt` at a **higher, richer, more expressive English level** (advanced/idiomatic English phrasing) that can still be expressed naturally at the user\'s **same German level**, related to the same topic or grammar point (do NOT give the German translation of the challenge sentence). Also include `vocabulary`: ONLY the main verb(s) (base infinitive) and the nouns (with der/die/das article) from that challenge sentence with their English meanings — do NOT list prepositions, conjunctions, adverbs, pronouns, or basic filler words.',
+        responseMimeType: 'application/json',
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            isCorrect: {
+              type: Type.BOOLEAN,
+              description: 'True if the original German sentence is grammatically and orthographically correct.',
+            },
+            correctedSentence: {
+              type: Type.STRING,
+              description: 'The clean, corrected German sentence preserving the original meaning.',
+            },
+            englishTranslation: {
+              type: Type.STRING,
+              description: 'Accurate English translation of the corrected sentence.',
+            },
+            overallFeedback: {
+              type: Type.STRING,
+              description: 'Brief 1-2 sentence encouraging feedback summarizing the result.',
+            },
+            mistakes: {
+              type: Type.ARRAY,
+              description: 'List of specific mistakes found in the original sentence, empty if correct.',
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  wrongPart: {
+                    type: Type.STRING,
+                    description: 'Exact word or phrase in the original sentence that was incorrect or missing.',
+                  },
+                  correction: {
+                    type: Type.STRING,
+                    description: 'What it should be changed to.',
+                  },
+                  ruleCategory: {
+                    type: Type.STRING,
+                    description: 'Grammar category, e.g., Word Order (Wortstellung), Case (Dativ/Akkusativ), Verb Auxiliary (haben/sein), Article/Gender, Preposition, Spelling/Capitalization.',
+                  },
+                  explanation: {
+                    type: Type.STRING,
+                    description: 'Clear, concise explanation of where it went wrong and the German grammar rule.',
+                  },
+                },
+                required: ['wrongPart', 'correction', 'ruleCategory', 'explanation'],
+              },
+            },
+            alternatives: {
+              type: Type.ARRAY,
+              description: '3 to 4 other natural and correct ways to express the same idea in German.',
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  style: {
+                    type: Type.STRING,
+                    description: 'Register or style label, e.g., Everyday Spoken, Polite / Formal (Sie), B1-B2 Upgrade, Short & Direct.',
+                  },
+                  german: {
+                    type: Type.STRING,
+                    description: 'The alternative German sentence.',
+                  },
+                  english: {
+                    type: Type.STRING,
+                    description: 'English translation or nuance of this alternative.',
+                  },
+                  whenToUse: {
+                    type: Type.STRING,
+                    description: 'Short note on when or why a speaker would choose this version.',
+                  },
+                },
+                required: ['style', 'german', 'english', 'whenToUse'],
+              },
+            },
+            nextPracticeChallenge: {
+              type: Type.OBJECT,
+              description: 'A same-German-level practice prompt written in higher, richer English for the user to translate into German.',
+              properties: {
+                detectedLevel: {
+                  type: Type.STRING,
+                  description: 'Detected German CEFR level of the user input, e.g., A1, A2, B1, or B2.',
+                },
+                nextLevel: {
+                  type: Type.STRING,
+                  description: 'Target German CEFR level — MUST be the SAME German CEFR level as detectedLevel (do NOT increase German difficulty).',
+                },
+                englishPrompt: {
+                  type: Type.STRING,
+                  description: 'An English sentence written in richer, higher-level English whose German translation stays at the same German CEFR level (do not include the German answer here).',
+                },
+                grammarFocus: {
+                  type: Type.STRING,
+                  description: 'The grammar structure or vocabulary skill practiced in this challenge.',
+                },
+                hint: {
+                  type: Type.STRING,
+                  description: 'A brief hint (e.g. key connector or verb/case tip) without giving away the full German sentence.',
+                },
+                vocabulary: {
+                  type: Type.ARRAY,
+                  description: 'ONLY the main verb(s) (infinitive) and the nouns (with der/die/das article) needed for the English challenge sentence. Do NOT include prepositions, adverbs, pronouns, conjunctions, or filler words.',
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      german: {
+                        type: Type.STRING,
+                        description: 'German noun with article (e.g. der Film, die Schwester) or main verb infinitive (e.g. gehen, einladen).',
+                      },
+                      english: {
+                        type: Type.STRING,
+                        description: 'English meaning of this noun or main verb.',
+                      },
+                      partOfSpeech: {
+                        type: Type.STRING,
+                        description: 'Either "Noun" or "Verb" only.',
+                      },
+                    },
+                    required: ['german', 'english', 'partOfSpeech'],
+                  },
+                },
+              },
+              required: ['detectedLevel', 'nextLevel', 'englishPrompt', 'grammarFocus', 'hint', 'vocabulary'],
+            },
+          },
+          required: ['isCorrect', 'correctedSentence', 'englishTranslation', 'overallFeedback', 'mistakes', 'alternatives', 'nextPracticeChallenge'],
+        },
+      },
+    });
+
+    const jsonText = (response.text ?? '').trim();
+    if (!jsonText) {
+      res.status(502).json({ error: 'EMPTY_RESPONSE', message: 'No response received from the grammar analyzer.' });
+      return;
+    }
+
+    const parsed = JSON.parse(jsonText);
+    res.json(parsed);
+  } catch (err: any) {
+    console.error('German sentence check error:', err);
+    const errMsg = err?.message || String(err);
+    const status = errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')
+      ? 429
+      : errMsg.includes('403') || errMsg.includes('PERMISSION_DENIED') || errMsg.includes('API_KEY_INVALID')
+      ? 403
+      : 500;
+    res.status(status).json({
+      error: 'SENTENCE_CHECK_FAILED',
+      message:
+        status === 429
+          ? 'API quota reached. Please wait a moment and try again.'
+          : status === 403
+          ? 'Please verify your Gemini API key in Settings > Secrets.'
+          : 'Could not analyze sentence right now. Please try again.',
+    });
+  }
+});
+
+// Conversational German tutor endpoint (sentence correction + grammar Q&A + alternatives)
+app.post('/api/german-chat', async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { messages } = req.body;
+    if (!Array.isArray(messages) || messages.length === 0) {
+      res.status(400).json({ error: 'INVALID_INPUT', message: 'Messages array is required.' });
+      return;
+    }
+
+    const ai = getGeminiClient();
+    if (!ai) {
+      res.status(503).json({
+        error: 'GEMINI_KEY_MISSING',
+        message: 'Gemini API key is not configured on the server. Please check Settings > Secrets.',
+      });
+      return;
+    }
+
+    const contents = messages.slice(-12).map((m: { role: string; text: string }) => ({
+      role: m.role === 'model' ? 'model' : 'user',
+      parts: [{ text: String(m.text || '').slice(0, 2000) }],
+    }));
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-4-hydrogen',
+      contents,
+      config: {
+        thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+        systemInstruction:
+          'You are a friendly, clear, expert German language teacher (DaF A1–C1). ' +
+          'Whenever the user sends German sentence(s): ' +
+          '1) **Corrected Sentence**: State whether their sentence is already correct or show the clean corrected German sentence (with brief English translation); ' +
+          '2) **Where It Went Wrong**: Explain each exact mistake -> correction and the simple grammar rule (if correct, praise why it works well); ' +
+          '3) **Other Correct Ways to Write It**: Give 2–3 natural alternative German phrasings (e.g., everyday spoken, polite/formal, B1–B2 upgrade); ' +
+          '4) **Practice Challenge (Same German Level · Higher English)**: ALWAYS finish with ONE English sentence written in **higher, richer, more expressive English** (stronger English vocabulary/phrasing), while keeping the German translation at the **SAME German CEFR level** as the sentence the user just wrote (do NOT increase the German grammar level—for example, if the user wrote A1 German, keep the target German at A1!). Right under that higher-level English sentence, ALWAYS include a **German Vocabulary (Main Verb & Nouns only)** list giving ONLY the main verb(s) (base infinitive) and the nouns (with `der/die/das` articles) and their English meanings — do NOT give meanings of prepositions, conjunctions, adverbs, pronouns, or other small words! Also include a tiny 1-line grammar hint without writing the full German translation of the challenge sentence for them. ' +
+          'Never use LaTeX syntax like $\\rightarrow$; use a plain → arrow instead. ' +
+          'If the user asks a general grammar or vocabulary question instead of sending a German sentence, answer clearly with examples and still offer a higher-level English sentence (translatable at their same German level) along with ONLY its main verb(s) and nouns.',
+      },
+    });
+
+    const reply = (response.text ?? '').trim();
+    if (!reply) {
+      res.status(502).json({ error: 'EMPTY_RESPONSE', message: 'No response received from tutor.' });
+      return;
+    }
+
+    res.json({ reply });
+  } catch (err: any) {
+    console.error('German chat error:', err);
+    const errMsg = err?.message || String(err);
+    const status = errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED')
+      ? 429
+      : errMsg.includes('403') || errMsg.includes('PERMISSION_DENIED') || errMsg.includes('API_KEY_INVALID')
+      ? 403
+      : 500;
+    res.status(status).json({
+      error: 'CHAT_FAILED',
+      message:
+        status === 429
+          ? 'API quota reached. Please wait a moment and try again.'
+          : status === 403
+          ? 'Please verify your Gemini API key in Settings > Secrets.'
+          : 'Could not reply right now. Please try again.',
+    });
+  }
+});
+
 // Health / status endpoint to check Gemini TTS availability
 app.get('/api/status', (_req: Request, res: Response) => {
   const hasKey = Boolean(process.env.GEMINI_API_KEY);
@@ -405,6 +671,9 @@ async function startServer() {
       server: {
         middlewareMode: true,
         hmr: false,
+        ws: {
+          server: httpServer,
+        },
       },
       appType: 'spa',
     });

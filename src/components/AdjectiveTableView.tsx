@@ -67,11 +67,14 @@ export function AdjectiveTableView({
           <thead>
             <tr className="border-b border-slate-800 bg-slate-950/40 text-slate-400 text-xs font-semibold uppercase tracking-wider">
               <th className="py-3 px-4 w-12 text-center">#</th>
+              <th className="py-3 px-2 w-10 text-center" title="Starred">
+                <Star className="w-3.5 h-3.5 mx-auto text-slate-500" />
+              </th>
               <th className="py-3 px-4 min-w-[200px]">Adjective 1</th>
               <th className="py-3 px-4 w-10 text-center"></th>
               <th className="py-3 px-4 min-w-[200px]">Adjective 2 (Opposite)</th>
               <th className="py-3 px-4 min-w-[340px]">Contrasting Example Sentence</th>
-              <th className="py-3 px-4 w-28 text-center">Actions</th>
+              <th className="py-3 px-4 w-24 text-center">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-800/60">
@@ -82,15 +85,34 @@ export function AdjectiveTableView({
               return (
                 <tr
                   key={item.id}
-                  className={`group transition-colors duration-150 border-l-4 border-l-cyan-500/70 ${
+                  className={`group transition-colors duration-150 border-l-4 ${
                     isCurrentlyPlaying
-                      ? 'bg-amber-500/10'
-                      : 'hover:bg-slate-800/50'
+                      ? 'bg-amber-500/20 border-l-amber-400'
+                      : isBookmarked
+                      ? 'bg-amber-500/10 hover:bg-amber-500/15 border-l-amber-400'
+                      : 'border-l-cyan-500/70 hover:bg-slate-800/50'
                   }`}
                 >
                   {/* ID */}
-                  <td className="py-3.5 px-4 text-center font-mono text-xs text-slate-500 group-hover:text-slate-400">
+                  <td className={`py-3.5 px-4 text-center font-mono text-xs group-hover:text-slate-300 ${
+                    isBookmarked ? 'text-amber-300 font-bold' : 'text-slate-500'
+                  }`}>
                     {item.id}
+                  </td>
+
+                  {/* Star column between numbering and word */}
+                  <td className="py-3.5 px-2 text-center">
+                    <button
+                      onClick={() => onToggleBookmark(item.id)}
+                      className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+                        isBookmarked
+                          ? 'text-amber-400 bg-amber-400/15'
+                          : 'text-slate-500 hover:text-amber-300 hover:bg-slate-800'
+                      }`}
+                      title={isBookmarked ? 'Remove star' : 'Star pair'}
+                    >
+                      <Star className={`w-4 h-4 ${isBookmarked ? 'fill-amber-400 text-amber-400' : ''}`} />
+                    </button>
                   </td>
 
                   {/* Adjective 1 */}
@@ -208,19 +230,6 @@ export function AdjectiveTableView({
                         title="Download audio clip"
                       >
                         <Download className="w-4 h-4" />
-                      </button>
-
-                      {/* Star Bookmark */}
-                      <button
-                        onClick={() => onToggleBookmark(item.id)}
-                        className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                          isBookmarked
-                            ? 'text-amber-400 hover:text-amber-300'
-                            : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
-                        }`}
-                        title={isBookmarked ? 'Remove bookmark' : 'Bookmark pair'}
-                      >
-                        <Star className={`w-4 h-4 ${isBookmarked ? 'fill-current' : ''}`} />
                       </button>
                     </div>
                   </td>
