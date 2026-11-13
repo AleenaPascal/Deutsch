@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>German B1-B2 Vocabulary Audio Player & Pronunciation Trainer (309 Verbs)</title>
+    <meta name="description" content="Listen to high-quality native audio pronunciation for the 309 essential German verbs, example sentences, and conjugation forms across all 3 study sheets, with auto-play, speed controls, and interactive audio study modes." />
+    <meta property="og:title" content="German B1-B2 Vocabulary Audio Player & Pronunciation Trainer (309 Verbs)" />
+    <meta property="og:description" content="Listen to high-quality native audio pronunciation for the 309 essential German verbs, example sentences, and conjugation forms across all 3 study sheets, with auto-play, speed controls, and interactive audio study modes." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script>
+      // Suppress dev server websocket reconnect/close noise in embedded iframe environment
+      window.addEventListener('unhandledrejection', function (event) {
+        var reason = event.reason;
+        var msg = (reason && (reason.message || String(reason))) || '';
+        if (msg.includes('WebSocket') || msg.includes('closed without opened')) {
+          event.preventDefault();
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
